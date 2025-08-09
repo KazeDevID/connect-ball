@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover"
+    />
+    <title>ConnectBall</title>
+    <style>
+      :root {
+        --bg: #0b1220;
+        --fg: #e6e6e6;
+        --muted: #a9a9a9;
+        --accent: #e879f9;
+        --panel: #161f32;
+        --panel-border: #2b3a5f;
+        --success: #22c55e;
+        --danger: #ef4444;
+        --warn: #f59e0b;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        height: 100%;
+      }
+
+      body {
+        margin: 0;
+        background: radial-gradient(1200px 800px at 50% -200px, #192642 0%, var(--bg) 55%, #070c16 100%);
+        color: var(--fg);
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu,
+          Cantarell, Noto Sans, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+      }
+
+      header,
+      footer {
+        padding: 12px 16px;
+        background: linear-gradient(180deg, #0e182b, #0b1220);
+        border-bottom: 1px solid #0f1b33;
+      }
+
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 700;
+        letter-spacing: 0.2px;
+      }
+
+      .brand .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--accent);
+        box-shadow: 0 0 12px var(--accent);
+      }
+
+      .panel {
+        margin: 16px auto;
+        background: linear-gradient(180deg, #0e1626, #0d1422);
+        border: 1px solid var(--panel-border);
+        border-radius: 12px;
+        padding: 14px;
+        max-width: 980px;
+        width: calc(100% - 24px);
+        box-shadow: 0 10px 60px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.02);
+      }
+
+      .game-wrap {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 14px;
+      }
+
+      .canvas-wrap {
+        display: grid;
+        place-items: center;
+        padding: 8px;
+        border-radius: 10px;
+        background: #0b1220;
+        border: 1px solid #14203a;
+      }
+
+      canvas {
+        width: min(90vw, 540px);
+        height: min(90vw, 540px);
+        image-rendering: pixelated;
+        image-rendering: crisp-edges;
+        background: #0b1220;
+        border-radius: 8px;
+        border: 1px solid #1b2a4c;
+        box-shadow: 0 6px 40px rgba(0, 0, 0, 0.4);
+      }
+
+      .controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .btn {
+        appearance: none;
+        border: 1px solid #2b3a5f;
+        background: linear-gradient(180deg, #141e34, #0f192c);
+        color: var(--fg);
+        border-radius: 10px;
+        padding: 10px 14px;
+        cursor: pointer;
+        transition: transform 0.08s ease, border-color 0.12s ease, background 0.12s ease;
+        font-weight: 600;
+      }
+      .btn:hover {
+        border-color: #3a4d7e;
+      }
+      .btn:active {
+        transform: translateY(1px) scale(0.99);
+      }
+      .btn-primary {
+        border-color: #7c3aed66;
+        background: linear-gradient(180deg, #2b1546, #1e0f31);
+        color: #f1d3ff;
+      }
+
+      .small {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .legend {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 12px;
+        color: var(--muted);
+        font-size: 14px;
+        padding: 8px;
+        border-top: 1px dashed #243352;
+        margin-top: 8px;
+      }
+
+      footer {
+        border-top: 1px solid #0f1b33;
+        border-bottom: none;
+        font-size: 12px;
+        color: var(--muted);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      }
+
+      .life-bar,
+      .stam-bar {
+        height: 10px;
+        border-radius: 999px;
+        background: #0f192d;
+        border: 1px solid #1a2b4d;
+        overflow: hidden;
+      }
+      .life-fill {
+        height: 100%;
+        background: linear-gradient(90deg, var(--warn), var(--danger));
+      }
+      .stam-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #34d399, #22c55e);
+      }
+      .hud {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px 16px;
+        align-items: center;
+      }
+
+      .row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        justify-content: space-between;
+      }
+
+      .k {
+        color: #93c5fd;
+      }
+      .v {
+        color: #fef3c7;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="brand">
+        <span class="dot"></span>
+        <span>ConnectBall</span>
+      </div>
+      <div class="small">Simple Game</div>
+    </header>
+
+    <main class="panel">
+      <div class="game-wrap">
+        <div class="canvas-wrap">
+          <canvas id="game" width="128" height="128" aria-label="Canvas game area"></canvas>
+        </div>
+
+        <div class="hud">
+          <div class="row">
+            <span>Skor</span>
+            <strong id="score">0</strong>
+          </div>
+          <div class="row">
+            <span>Max Bola</span>
+            <strong id="maxBallScore">0</strong>
+          </div>
+          <div class="row">
+            <span>Life</span>
+            <div class="life-bar" style="width: 220px;">
+              <div id="lifeFill" class="life-fill" style="width: 100%;"></div>
+            </div>
+          </div>
+          <div class="row">
+            <span>Stamina</span>
+            <div class="stam-bar" style="width: 220px;">
+              <div id="stamFill" class="stam-fill" style="width: 100%;"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="controls">
+          <button class="btn btn-primary" id="btnPlay">Mainkan</button>
+          <button class="btn" data-diff="endless">Endless</button>
+          <button class="btn" data-diff="easy">Easy</button>
+          <button class="btn" data-diff="normal">Normal</button>
+          <button class="btn" data-diff="hard">Hard</button>
+          <button class="btn" id="btnSound">Suara: ON</button>
+          <button class="btn" id="btnReset">Reset</button>
+        </div>
+
+        <div class="legend">
+          <div><span class="k">Kontrol:</span> <span class="v">Klik/Tap untuk arahkan dan lepas untuk menembak bola</span></div>
+          <div><span class="k">Tujuan:</span> <span class="v">Gabungkan 2 bola dengan warna sama untuk naik level warna. Capai warna tertinggi untuk menang.</span></div>
+          <div><span class="k">Catatan:</span> <span class="v">Mainkan dengan hati hati jangan sampai Life mu habis.</span></div>
+        </div>
+      </div>
+    </main>
+
+    <footer>
+      <span>©</span>
+      <span>KazeDevID</span>
+    </footer>
+
+    <script src="/game.js" type="module"></script>
+  </body>
+</html>
