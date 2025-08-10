@@ -875,7 +875,6 @@ commandInput.addEventListener("keydown", (e) => {
   }
 })
 
-// Auto-focus command input when typing
 document.addEventListener("keydown", (e) => {
   if (state === "menu" && e.key === "/" && document.activeElement !== commandInput) {
     e.preventDefault()
