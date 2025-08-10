@@ -200,6 +200,27 @@
       .v {
         color: #fef3c7;
       }
+
+      .command-input {
+        appearance: none;
+        border: 1px solid #2b3a5f;
+        background: linear-gradient(180deg, #0f1a2e, #0b1422);
+        color: var(--fg);
+        border-radius: 10px;
+        padding: 10px 14px;
+        font-family: 'Courier New', monospace;
+        font-size: 13px;
+        min-width: 200px;
+        transition: border-color 0.12s ease, box-shadow 0.12s ease;
+      }
+      .command-input:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 2px rgba(232, 121, 249, 0.1);
+      }
+      .command-input::placeholder {
+        color: #64748b;
+      }
     </style>
   </head>
   <body>
@@ -242,6 +263,7 @@
 
         <div class="controls">
           <button class="btn btn-primary" id="btnPlay">Mainkan</button>
+          <input type="text" id="commandInput" class="command-input" placeholder="Ketik /help untuk bantuan..." />
           <button class="btn" data-diff="endless">Endless</button>
           <button class="btn" data-diff="easy">Easy</button>
           <button class="btn" data-diff="normal">Normal</button>

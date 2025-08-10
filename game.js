@@ -9,6 +9,7 @@ const stamFillEl = document.getElementById("stamFill")
 const btnPlay = document.getElementById("btnPlay")
 const btnReset = document.getElementById("btnReset")
 const btnSound = document.getElementById("btnSound")
+const commandInput = document.getElementById("commandInput")
 const diffButtons = Array.from(document.querySelectorAll(".controls .btn[data-diff]"))
 
 const CB8 = {
@@ -36,6 +37,22 @@ const ballValue = [0, 1, 2, 3, 5, 10, 20, 100]
 const ballCost =  [0, 4, 3.5, 3, 2, 1.5, 1, 0]
 
 const uses = { sound: true }
+const commands = {
+  help: "Tampilkan daftar perintah",
+  mode: "Ubah mode kesulitan (endless/easy/normal/hard)",
+  play: "Mulai permainan",
+  reset: "Reset permainan",
+  sound: "Toggle suara on/off",
+  score: "Tampilkan skor tertinggi",
+  info: "Informasi tentang game",
+  clear: "Bersihkan console"
+}
+
+let commandHistory = []
+let commandIndex = -1
+let showingHelp = false
+let consoleMessages = []
+
 const sfx = {
   9: new Audio("audio/sfx09.ogg"),
   10: new Audio("audio/sfx10.ogg"),
@@ -127,6 +144,8 @@ let suddenDeathDuration = 120
 
 let life = 100
 let lifeSmoothed = 100
+let highScore = parseInt(localStorage.getItem('connectball_highscore') || '0')
+let bestMaxBall = parseInt(localStorage.getItem('connectball_maxball') || '0')
 
 function reset() {
   stopAllMusic()
@@ -177,6 +196,112 @@ function reset() {
   playMusic(0)
 
   updateHUD()
+}
+
+function addConsoleMessage(msg, type = 'info') {
+  consoleMessages.push({ msg, type, time: Date.now() })
+  if (consoleMessages.length > 10) {
+    consoleMessages.shift()
+  }
+}
+
+function executeCommand(cmd) {
+  const parts = cmd.toLowerCase().trim().split(' ')
+  const command = parts[0].replace('/', '')
+  const args = parts.slice(1)
+
+  addConsoleMessage(`> ${cmd}`, 'command')
+
+  switch (command) {
+    case 'help':
+    case 'h':
+      showingHelp = true
+      addConsoleMessage('=== DAFTAR PERINTAH ===', 'success')
+      Object.entries(commands).forEach(([cmd, desc]) => {
+        addConsoleMessage(`/${cmd} - ${desc}`, 'info')
+      })
+      addConsoleMessage('Contoh: /mode easy, /play, /sound', 'info')
+      break
+
+    case 'mode':
+    case 'm':
+      if (args.length === 0) {
+        addConsoleMessage(`Mode saat ini: ${difficulty}`, 'info')
+        addConsoleMessage('Mode tersedia: endless, easy, normal, hard', 'info')
+      } else {
+        const newMode = args[0]
+        if (['endless', 'easy', 'normal', 'hard'].includes(newMode)) {
+          setDifficulty(newMode)
+          addConsoleMessage(`Mode diubah ke: ${newMode}`, 'success')
+          playSfx(12)
+        } else {
+          addConsoleMessage('Mode tidak valid! Gunakan: endless/easy/normal/hard', 'error')
+        }
+      }
+      break
+
+    case 'play':
+    case 'p':
+      if (state === 'menu') {
+        state = 'intro'
+        addConsoleMessage('Permainan dimulai!', 'success')
+        playSfx(12)
+        stopAllMusic()
+      } else {
+        addConsoleMessage('Permainan sudah berjalan!', 'warn')
+      }
+      break
+
+    case 'reset':
+    case 'r':
+      reset()
+      addConsoleMessage('Permainan direset!', 'success')
+      break
+
+    case 'sound':
+    case 's':
+      uses.sound = !uses.sound
+      if (!uses.sound) {
+        stopAllMusic()
+      } else {
+        playSfx(13)
+      }
+      addConsoleMessage(`Suara: ${uses.sound ? 'ON' : 'OFF'}`, 'success')
+      btnSound.textContent = `Suara: ${uses.sound ? "ON" : "OFF"}`
+      break
+
+    case 'score':
+      addConsoleMessage(`Skor Tertinggi: ${highScore}`, 'info')
+      addConsoleMessage(`Max Bola Tertinggi: ${bestMaxBall}`, 'info')
+      addConsoleMessage(`Skor Saat Ini: ${score}`, 'info')
+      break
+
+    case 'info':
+    case 'i':
+      addConsoleMessage('=== CONNECTBALL INFO ===', 'success')
+      addConsoleMessage('Game puzzle menggabungkan bola warna', 'info')
+      addConsoleMessage('Gabungkan 2 bola sama untuk naik level', 'info')
+      addConsoleMessage('Capai warna tertinggi untuk menang!', 'info')
+      addConsoleMessage('Dibuat oleh KazeDevID', 'info')
+      break
+
+    case 'clear':
+    case 'c':
+      consoleMessages = []
+      showingHelp = false
+      addConsoleMessage('Console dibersihkan', 'success')
+      break
+
+    default:
+      addConsoleMessage(`Perintah '${command}' tidak dikenal. Ketik /help untuk bantuan`, 'error')
+      break
+  }
+
+  commandHistory.unshift(cmd)
+  if (commandHistory.length > 20) {
+    commandHistory.pop()
+  }
+  commandIndex = -1
 }
 
 function setDifficulty(name) {
@@ -426,6 +551,17 @@ function updateGame() {
   if (ballScore > maxBallScore) {
     maxBallScore = ballScore
   }
+  
+  // Update high scores
+  if (score > highScore) {
+    highScore = score
+    localStorage.setItem('connectball_highscore', String(highScore))
+  }
+  if (maxBallScore > bestMaxBall) {
+    bestMaxBall = maxBallScore
+    localStorage.setItem('connectball_maxball', String(bestMaxBall))
+  }
+  
   maxMult = Math.max(ballMult, maxMult)
 
   if (launcher.stamina < 100) {
@@ -535,9 +671,31 @@ function drawOverlay() {
     ctx.fillText("ConnectBall", WIDTH / 2, 36)
     ctx.fillStyle = "#cbd5e1"
     ctx.font = "7px sans-serif"
-    ctx.fillText("Pilih mode dan tekan Mainkan", WIDTH / 2, 52)
+    ctx.fillText("Ketik /help untuk bantuan", WIDTH / 2, 52)
     ctx.fillStyle = "#94a3b8"
-    ctx.fillText("(Klik/tap di kanvas untuk arahkan)", WIDTH / 2, 64)
+    ctx.fillText("Contoh: /play, /mode easy, /sound", WIDTH / 2, 64)
+    
+    // Draw console messages
+    ctx.textAlign = "left"
+    ctx.font = "6px monospace"
+    let yOffset = 80
+    const maxMessages = 6
+    const recentMessages = consoleMessages.slice(-maxMessages)
+    
+    for (const msg of recentMessages) {
+      let color = "#cbd5e1"
+      switch (msg.type) {
+        case 'command': color = "#fbbf24"; break
+        case 'success': color = "#34d399"; break
+        case 'error': color = "#f87171"; break
+        case 'warn': color = "#fb923c"; break
+        case 'info': color = "#93c5fd"; break
+      }
+      ctx.fillStyle = color
+      ctx.fillText(msg.msg.substring(0, 25), 4, yOffset)
+      yOffset += 8
+      if (yOffset > HEIGHT - 8) break
+    }
   }
 
   if (state === "intro") {
@@ -692,10 +850,45 @@ btnSound.addEventListener("click", () => {
   btnSound.textContent = `Suara: ${uses.sound ? "ON" : "OFF"}`
 })
 
+commandInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    const cmd = commandInput.value.trim()
+    if (cmd) {
+      executeCommand(cmd)
+      commandInput.value = ""
+    }
+  } else if (e.key === "ArrowUp") {
+    e.preventDefault()
+    if (commandIndex < commandHistory.length - 1) {
+      commandIndex++
+      commandInput.value = commandHistory[commandIndex]
+    }
+  } else if (e.key === "ArrowDown") {
+    e.preventDefault()
+    if (commandIndex > 0) {
+      commandIndex--
+      commandInput.value = commandHistory[commandIndex]
+    } else if (commandIndex === 0) {
+      commandIndex = -1
+      commandInput.value = ""
+    }
+  }
+})
+
+// Auto-focus command input when typing
+document.addEventListener("keydown", (e) => {
+  if (state === "menu" && e.key === "/" && document.activeElement !== commandInput) {
+    e.preventDefault()
+    commandInput.focus()
+    commandInput.value = "/"
+  }
+})
+
 diffButtons.forEach((btn) => {
   btn.addEventListener("click", () => {
     const diff = btn.getAttribute("data-diff")
     setDifficulty(diff)
+    addConsoleMessage(`Mode diubah ke: ${diff}`, 'success')
   })
 })
 
@@ -719,4 +912,5 @@ function loop(now) {
 }
 
 reset()
+addConsoleMessage('ConnectBall dimuat! Ketik /help untuk bantuan', 'success')
 requestAnimationFrame(loop)
